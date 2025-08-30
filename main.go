@@ -2,48 +2,66 @@ package main
 
 import (
 	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 )
 
-var UrlMap map[string]string
+var long_to_short, short_to_long map[string]string
 
 func httpHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Hello World")
 }
-func process_url(long_url string) string {
-	short_url, ok := UrlMap[long_url]
-	if ok {
-		fmt.Println("Url exists:", short_url)
-	} else {
-
-	}
+func hash_process_long_to_short(long_url string) string {
+	hash := md5.Sum([]byte(long_url))
+	res := hex.EncodeToString(hash[:])
+	return res[:10]
 }
 func addUrl() {
 	for {
 		var order, long_url string
-		fmt.Scan(&order, &long_url)
+		fmt.Scan(&order)
 		if order == "exit" {
 			os.Exit(0)
 		}
 		if order == "add" {
-			short_url := process_url(long_url)
-			UrlMap[long_url] = short_url
+			fmt.Scan(&long_url)
+			short_url, ok := long_to_short[long_url]
+			if ok {
+				log.Println("short url already exists:", short_url)
+			} else {
+				short_url = hash_process_long_to_short(long_url)
+				long_to_short[long_url] = short_url
+				short_to_long[short_url] = long_url
+				log.Println("add url:", long_url, "->", short_url)
+			}
+			continue
 		}
 		if order == "del" {
-			delete(UrlMap, long_url)
+			fmt.Scan(&long_url)
+			short_url, ok := long_to_short[long_url]
+			if ok {
+				delete(long_to_short, long_url)
+				delete(short_to_long, short_url)
+			} else {
+				log.Println("long url not exists:", long_url)
+			}
+			continue
 		}
+		log.Println("order not exists:", order)
 	}
 }
 
 func main() {
-	UrlMap = make(map[string]string)
+	short_to_long = make(map[string]string)
+	long_to_short = make(map[string]string)
 	go addUrl()
 	http.HandleFunc("/", httpHandler)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
+
 		log.Fatal(err)
 	}
 }
