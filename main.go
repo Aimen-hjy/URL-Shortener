@@ -45,6 +45,7 @@ func PostHandler(c *gin.Context) {
 	} else if option == "browse" {
 		original_url, ok := getLongUrl(url)
 		if !ok {
+			c.HTML(http.StatusOK, "error.html", gin.H{})
 			//TODO: Add a page to show error
 		} else {
 			c.Redirect(http.StatusFound, original_url)
