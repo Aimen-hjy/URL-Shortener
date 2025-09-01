@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"os"
@@ -26,7 +27,18 @@ func hash_process_long_to_short(long_url string) string {
 	res := hex.EncodeToString(hash[:])
 	return res[:10]
 }
-func addUrl() {
+func addUrl(long_url string) {
+	short_url, ok := long_to_short[long_url]
+	if ok {
+		log.Println("short url already exists:", short_url)
+	} else {
+		short_url = hash_process_long_to_short(long_url)
+		long_to_short[long_url] = short_url
+		short_to_long[short_url] = long_url
+		log.Println("add url:", long_url, "->", short_url)
+	}
+}
+func cmdProcessor() {
 	for {
 		var order, long_url string
 		fmt.Scan(&order)
@@ -61,15 +73,33 @@ func addUrl() {
 		log.Println("order not exists:", order)
 	}
 }
-
+func getLongUrl(short_url string) (string, bool) {
+	long_url, ok := short_to_long[short_url]
+	return long_url, ok
+}
+func mainHandler(c *gin.Context) {
+	c.HTML(http.StatusOK, "index.html", gin.H{})
+}
+func PostHandler(c *gin.Context) {
+	option := c.PostForm("option")
+	url := c.PostForm("url")
+	if option == "add" {
+		addUrl(url)
+	} else if option == "browse" {
+		original_url, ok := getLongUrl(url)
+		if !ok {
+			//TODO: Add a page to show error
+		} else {
+			c.Redirect(http.StatusFound, original_url)
+		}
+	}
+}
 func main() {
 	short_to_long = make(map[string]string)
 	long_to_short = make(map[string]string)
-	go addUrl()
-	http.HandleFunc("/", hashRedirectHandler)
-	err := http.ListenAndServe(":8080", nil)
-	if err != nil {
-
-		log.Fatal(err)
-	}
+	r := gin.Default()
+	r.LoadHTMLGlob("static/*")
+	r.GET("/", mainHandler)
+	r.POST("/", PostHandler)
+	r.Run(":8080")
 }
