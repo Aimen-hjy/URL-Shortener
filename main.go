@@ -52,6 +52,15 @@ func PostHandler(c *gin.Context) {
 		}
 	}
 }
+func RedirectHandler(c *gin.Context) {
+	short_url := c.Param("short_url")
+	original_url, ok := getLongUrl(short_url)
+	if !ok {
+		c.HTML(http.StatusOK, "error.html", gin.H{})
+	} else {
+		c.Redirect(http.StatusFound, original_url)
+	}
+}
 func main() {
 	short_to_long = make(map[string]string)
 	long_to_short = make(map[string]string)
@@ -59,5 +68,6 @@ func main() {
 	r.LoadHTMLGlob("static/*")
 	r.GET("/", mainHandler)
 	r.POST("/", PostHandler)
+	r.GET("/:short_url", RedirectHandler)
 	r.Run(":8080")
 }
