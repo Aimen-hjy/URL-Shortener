@@ -10,7 +10,9 @@
 <form method="POST">
     <div class="text-center mt-5">
         <label for="URLInput" class="form-label mb-3">URL</label>
-        <input type="text" class="form-control mx-auto mb-5" style="max-width: 300px;" id="URLInput" name="url" placeholder="Enter URL">
+        <input type="text" class="form-control mx-auto mb-5" style="max-width: 300px;" id="URLInput" name="url" placeholder="Enter URL" value="{{.OriginalUrl}}">
+        <label for="ShortUrl" class="form-label mb-3">Your URL</label>
+        <input type="text" class="form-control mx-auto mb-5" style="max-width: 300px;" id="ShortUrl" name="short_url" placeholder="Your URL" value="{{.Result}}" readonly>
     </div>
     <button type="submit" class="btn btn-primary" name="option" value="add">Add</button>
     <button type="submit" class="btn btn-primary" name="option" value="browse">Browse</button>
