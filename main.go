@@ -14,7 +14,7 @@ var database *sql.DB
 
 func getLongByShort(short_url string) (string, bool, error) {
 	var long_url string
-	err := database.QueryRow("SELECT long_url FROM urls WHERE short_url=?", short_url).Scan(&long_url)
+	err := database.QueryRow("SELECT long_url FROM URLmap WHERE short_url=?", short_url).Scan(&long_url)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return "", false, nil
@@ -25,7 +25,7 @@ func getLongByShort(short_url string) (string, bool, error) {
 }
 func getShortByLong(long_url string) (string, bool, error) {
 	var short_url string
-	err := database.QueryRow("SELECT short_url FROM urls WHERE long_url=?", long_url).Scan(&short_url)
+	err := database.QueryRow("SELECT short_url FROM URLmap WHERE long_url=?", long_url).Scan(&short_url)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return "", false, nil
@@ -43,13 +43,14 @@ func hash_process_long_to_short(long_url string) string {
 	res := hex.EncodeToString(hash[:])
 	return res[:10]
 }
-func addUrl(long_url string) {
+func addUrl(long_url string) string {
 	short_url, ok, err := getShortByLong(long_url)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if ok {
 		log.Println("short url already exists:", short_url)
+		return short_url
 	} else {
 		short_url = hash_process_long_to_short(long_url)
 		err = insertUrl(long_url, short_url)
@@ -57,6 +58,7 @@ func addUrl(long_url string) {
 			log.Fatal(err)
 		}
 		log.Println("add url:", long_url, "->", short_url)
+		return short_url
 	}
 }
 
@@ -68,7 +70,7 @@ func PostHandler(c *gin.Context) {
 	url := c.PostForm("url")
 	true_url, _, _ := getShortByLong(url)
 	if option == "add" {
-		addUrl(url)
+		true_url = addUrl(url)
 		c.HTML(http.StatusOK, "index.html", gin.H{
 			"OriginalUrl": url,
 			"Result":      true_url,
